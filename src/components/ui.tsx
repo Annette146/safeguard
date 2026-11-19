@@ -4,9 +4,9 @@ import { Link } from 'react-router';
 type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
 const variants: Record<Variant, string> = {
   primary: 'bg-brand-800 text-white hover:bg-brand-700 disabled:bg-slate-400',
-  secondary: 'bg-white text-brand-800 border border-slate-300 hover:bg-slate-50 disabled:text-slate-400',
+  secondary: 'bg-white text-brand-800 border border-slate-300 hover:bg-slate-50 disabled:text-slate-400 dark:bg-zinc-900 dark:text-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800',
   danger: 'bg-sos text-white hover:bg-sos-dark disabled:bg-red-300',
-  ghost: 'text-brand-700 hover:bg-brand-50',
+  ghost: 'text-brand-700 hover:bg-brand-50 dark:text-blue-400 dark:hover:bg-zinc-800',
 };
 const base = 'inline-flex items-center justify-center gap-2 rounded-lg px-4 min-h-11 font-semibold transition-colors disabled:cursor-not-allowed';
 
@@ -32,14 +32,14 @@ export function Field({ label, hint, error, children }: { label: string; hint?: 
   const errId = error ? `${id}-err` : undefined;
   return (
     <div className="space-y-1">
-      <label htmlFor={id} className="block font-medium text-slate-900">{label}</label>
-      {hint && <p id={hintId} className="text-sm text-slate-600">{hint}</p>}
+      <label htmlFor={id} className="block font-medium text-slate-900 dark:text-zinc-100">{label}</label>
+      {hint && <p id={hintId} className="text-sm text-slate-600 dark:text-zinc-400">{hint}</p>}
       {children(id, [hintId, errId].filter(Boolean).join(' ') || undefined)}
-      {error && <p id={errId} className="text-sm font-medium text-red-700">⚠ {error}</p>}
+      {error && <p id={errId} className="text-sm font-medium text-red-700 dark:text-red-400">⚠ {error}</p>}
     </div>
   );
 }
-const inputCls = 'w-full rounded-lg border border-slate-400 bg-white px-3 min-h-11 text-base focus:border-brand-600 aria-[invalid=true]:border-red-600';
+const inputCls = 'w-full rounded-lg border border-slate-400 bg-white px-3 min-h-11 text-base focus:border-brand-600 aria-[invalid=true]:border-red-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100';
 export const Input = (p: InputHTMLAttributes<HTMLInputElement>) => <input {...p} className={`${inputCls} ${p.className ?? ''}`} />;
 export const Select = (p: SelectHTMLAttributes<HTMLSelectElement>) => <select {...p} className={`${inputCls} ${p.className ?? ''}`} />;
 export const Textarea = (p: TextareaHTMLAttributes<HTMLTextAreaElement>) => <textarea {...p} className={`${inputCls} py-2 ${p.className ?? ''}`} />;
@@ -62,18 +62,18 @@ export function Alert({ kind = 'info', title, children }: { kind?: 'info' | 'err
 }
 
 export function Card({ className = '', children }: { className?: string; children: ReactNode }) {
-  return <section className={`rounded-xl bg-white border border-slate-200 shadow-sm p-4 sm:p-5 ${className}`}>{children}</section>;
+  return <section className={`rounded-xl bg-white border border-slate-200 shadow-sm p-4 sm:p-5 dark:bg-zinc-900/95 dark:border-zinc-800 ${className}`}>{children}</section>;
 }
 
 export function PageTitle({ children, sub }: { children: ReactNode; sub?: ReactNode }) {
   return (
     <div className="mb-4">
-      <h1 className="text-2xl font-bold text-brand-900">{children}</h1>
-      {sub && <p className="text-slate-600 mt-1">{sub}</p>}
+      <h1 className="text-2xl font-bold text-brand-900 dark:text-white">{children}</h1>
+      {sub && <p className="text-slate-600 mt-1 dark:text-zinc-400">{sub}</p>}
     </div>
   );
 }
 
 export function Empty({ children }: { children: ReactNode }) {
-  return <p className="text-slate-600 text-center py-8">{children}</p>;
+  return <p className="text-slate-600 text-center py-8 dark:text-zinc-400">{children}</p>;
 }

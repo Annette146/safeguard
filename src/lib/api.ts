@@ -1,3 +1,5 @@
+import type { ApiFailure } from '../types/safeguardTypes';
+
 // Access token lives in memory only (never localStorage). The refresh token is an httpOnly cookie.
 let accessToken: string | null = null;
 let refreshing: Promise<boolean> | null = null;
@@ -13,6 +15,57 @@ export class ApiError extends Error {
     super(message); this.status = status; this.code = code; this.fields = fields;
   }
 }
+
+export const toApiFailure = (error: unknown): ApiFailure => {
+  if (error instanceof ApiError) {
+    if (error.status === 0 || error.code === 'offline') {
+      return {
+        kind: 'network',
+        message: error.message || 'Cannot reach the server. Check your connection and try again.',
+      };
+    }
+    if (error.status === 401) {
+      return {
+        kind: 'unauthenticated',
+        message: error.message || 'Your session has expired. Please sign in again.',
+      };
+    }
+    if (error.status === 403 && error.code === 'suspended') {
+      return {
+        kind: 'suspended',
+        message: error.message || 'Your account is suspended.',
+      };
+    }
+    if (error.status === 403) {
+      return {
+        kind: 'forbidden',
+        message: error.message || 'You are not authorized to perform this action.',
+      };
+    }
+    if (error.status === 400 || error.status === 422) {
+      return {
+        kind: 'validation',
+        message: error.message || 'Please check the information you entered.',
+        fields: error.fields,
+      };
+    }
+    return {
+      kind: 'unknown',
+      message: error.message || 'Something went wrong. Please try again.',
+      fields: error.fields,
+    };
+  }
+  if (error instanceof Error) {
+    return {
+      kind: 'unknown',
+      message: error.message || 'Something went wrong. Please try again.',
+    };
+  }
+  return {
+    kind: 'unknown',
+    message: 'Something went wrong. Please try again.',
+  };
+};
 
 export async function refreshSession(): Promise<boolean> {
   refreshing ??= fetch('/api/auth/refresh', { method: 'POST', credentials: 'same-origin' })

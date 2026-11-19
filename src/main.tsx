@@ -1,9 +1,10 @@
-import { StrictMode, Suspense, lazy, type ReactNode } from 'react';
+import { StrictMode, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router';
+import { BrowserRouter, Route, Routes } from 'react-router';
 import './index.css';
-import { AuthProvider, useAuth, type Role } from './lib/auth';
-import { I18nProvider } from './lib/i18n';
+import { Providers } from './Provider';
+import { RequireRole } from './auth/RequireRole';
+import { useAuth } from './auth/AuthProvider';
 import { Layout } from './components/Layout';
 import { Spinner } from './components/ui';
 import { Home } from './pages/Home';
@@ -13,25 +14,32 @@ import { Sos } from './pages/Sos';
 import { Track, MyReports, MyReportDetail, CitizenMap, Notifications } from './pages/Citizen';
 import { Profile } from './pages/Profile';
 import { Help } from './pages/Help';
+
 // Staff/admin code is split out so citizens on slow connections don't download it.
 const StaffDashboard = lazy(() => import('./pages/StaffDashboard').then((m) => ({ default: m.StaffDashboard })));
+const StaffIncidents = lazy(() => import('./pages/StaffDashboard').then((m) => ({ default: m.StaffIncidents })));
+const StaffSos = lazy(() => import('./pages/StaffDashboard').then((m) => ({ default: m.StaffSos })));
 const StaffMap = lazy(() => import('./pages/StaffDashboard').then((m) => ({ default: m.StaffMap })));
+const StaffLedger = lazy(() => import('./pages/StaffDashboard').then((m) => ({ default: m.StaffLedger })));
 const CaseDetail = lazy(() => import('./pages/CaseDetail').then((m) => ({ default: m.CaseDetail })));
-const Admin = lazy(() => import('./pages/Admin').then((m) => ({ default: m.Admin })));
 
-/** UX guard only: every permission is enforced again by the API. */
-function RequireRole({ roles, children }: { roles?: Role[]; children: ReactNode }) {
-  const { user, ready } = useAuth();
-  const loc = useLocation();
-  if (!ready) return <Spinner />;
-  if (!user) return <Navigate to={`/login?next=${encodeURIComponent(loc.pathname)}`} replace />;
-  if (roles && !roles.includes(user.role)) return <Navigate to={user.role === 'citizen' ? '/' : '/staff'} replace />;
-  return <Suspense fallback={<Spinner />}>{children}</Suspense>;
-}
+const AdminOverview = lazy(() => import('./pages/Admin').then((m) => ({ default: m.AdminOverview })));
+const AdminUsers = lazy(() => import('./pages/Admin').then((m) => ({ default: m.AdminUsers })));
+const AdminSuspended = lazy(() => import('./pages/Admin').then((m) => ({ default: m.AdminSuspended })));
+const AdminDepartments = lazy(() => import('./pages/Admin').then((m) => ({ default: m.AdminDepartments })));
+const AdminAuditLogs = lazy(() => import('./pages/Admin').then((m) => ({ default: m.AdminAuditLogs })));
+const AdminSettings = lazy(() => import('./pages/Admin').then((m) => ({ default: m.AdminSettings })));
 
 function App() {
   const { ready } = useAuth();
-  if (!ready) return <div className="min-h-dvh flex items-center justify-center"><Spinner /></div>;
+  if (!ready) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center">
+        <Spinner />
+      </div>
+    );
+  }
+
   return (
     <Routes>
       <Route element={<Layout />}>
@@ -47,11 +55,32 @@ function App() {
         <Route path="reports/:id" element={<RequireRole roles={['citizen']}><MyReportDetail /></RequireRole>} />
         <Route path="notifications" element={<RequireRole><Notifications /></RequireRole>} />
         <Route path="profile" element={<RequireRole><Profile /></RequireRole>} />
+
         <Route path="staff" element={<RequireRole roles={['officer', 'commander', 'investigator', 'admin']}><StaffDashboard /></RequireRole>} />
+        <Route path="staff/incidents" element={<RequireRole roles={['officer', 'commander', 'investigator']}><StaffIncidents /></RequireRole>} />
+        <Route path="staff/sos" element={<RequireRole roles={['officer', 'commander']}><StaffSos /></RequireRole>} />
         <Route path="staff/map" element={<RequireRole roles={['officer', 'commander', 'investigator']}><StaffMap /></RequireRole>} />
+        <Route path="staff/ledger" element={<RequireRole roles={['commander', 'investigator']}><StaffLedger /></RequireRole>} />
         <Route path="staff/cases/:id" element={<RequireRole roles={['officer', 'commander', 'investigator']}><CaseDetail /></RequireRole>} />
-        <Route path="admin" element={<RequireRole roles={['admin']}><Admin /></RequireRole>} />
-        <Route path="*" element={<div className="text-center py-12"><h1 className="text-2xl font-bold">Page not found</h1><a href="/" className="underline">Go home</a></div>} />
+
+        <Route path="admin" element={<RequireRole roles={['admin']}><AdminOverview /></RequireRole>} />
+        <Route path="admin/users" element={<RequireRole roles={['admin']}><AdminUsers /></RequireRole>} />
+        <Route path="admin/suspended" element={<RequireRole roles={['admin']}><AdminSuspended /></RequireRole>} />
+        <Route path="admin/departments" element={<RequireRole roles={['admin']}><AdminDepartments /></RequireRole>} />
+        <Route path="admin/audit-logs" element={<RequireRole roles={['admin']}><AdminAuditLogs /></RequireRole>} />
+        <Route path="admin/settings" element={<RequireRole roles={['admin']}><AdminSettings /></RequireRole>} />
+
+        <Route
+          path="*"
+          element={
+            <div className="text-center py-12">
+              <h1 className="text-2xl font-bold">Page not found</h1>
+              <a href="/" className="underline">
+                Go home
+              </a>
+            </div>
+          }
+        />
       </Route>
     </Routes>
   );
@@ -60,12 +89,14 @@ function App() {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <I18nProvider>
-        <AuthProvider><App /></AuthProvider>
-      </I18nProvider>
+      <Providers>
+        <App />
+      </Providers>
     </BrowserRouter>
   </StrictMode>,
 );
 
 // Offline shell (PWA). Evidence and API responses are never cached.
-if ('serviceWorker' in navigator && import.meta.env.PROD) navigator.serviceWorker.register('/sw.js').catch(() => {});
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}

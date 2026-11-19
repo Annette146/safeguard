@@ -5,7 +5,7 @@
 | **Product** | SAFEGUARD: public-safety reporting, emergency SOS and tamper-evident digital evidence platform |
 | **Document version** | 1.0 (2026-11-19) |
 | **Product version covered** | v0.1 dev build, plus roadmap to v1.0 |
-| **Source brief** | `web/init prompt.md` (master development prompt) |
+| **Source brief** | [init prompt.md](../init%20prompt.md) (master development prompt) |
 | **Companion docs** | [ARCHITECTURE.md](../../docs/ARCHITECTURE.md) (technical decisions) · [API.md](../../docs/API.md) (endpoint reference) · [README.md](../../README.md) (setup) |
 | **Status** | Draft, pending stakeholder and legal review |
 
@@ -80,7 +80,7 @@ These two journeys are the release acceptance tests. v1.0 cannot ship unless bot
 7. Every step appears in the case timeline and the evidence chain of custody.
 
 ### J2: SOS
-1. A citizen presses **SOS – REQUEST EMERGENCY HELP**. A short countdown appears with **Send now** and **Cancel**.
+1. A citizen presses **SOS – REQUEST EMERGENCY HELP**. A short countdown appears with optional emergency-type selection, **Send now** and **Cancel** (and optional follow-up details for responders can be added once sent).
 2. The device captures the current location (or the last known location, clearly labelled).
 3. Status advances only as it is confirmed: `queued → sent → delivered → acknowledged → dispatched`.
 4. If offline, the alert is queued locally and retried, and the citizen is offered the **native dialer** and an **SMS share** fallback.
@@ -121,7 +121,7 @@ These two journeys are the release acceptance tests. v1.0 cannot ship unless bot
 | ID | Requirement | Pri | Status |
 |---|---|---|---|
 | FR-SOS-1 | A red **SOS – REQUEST EMERGENCY HELP** button is reachable from the home screen and every main screen. | P0 | ✅ |
-| FR-SOS-2 | A short countdown with **Send now** (skips the countdown) and **Cancel**. The countdown must never block a genuine emergency. | P0 | ✅ |
+| FR-SOS-2 | A short countdown with optional emergency-type selection, **Send now** (skips the countdown) and **Cancel**, plus optional post-trigger details for responders. The countdown must never block a genuine emergency. | P0 | ✅ |
 | FR-SOS-3 | Captures current GPS. Otherwise uses the last-known location, **labelled as such**. Also works with no location at all. | P0 | ✅ |
 | FR-SOS-4 | States `initiated / queued → sent → delivered → acknowledged → dispatched`. Each state is set only by the actor defined in ARCHITECTURE.md §4. **No state is ever displayed before it is confirmed.** | P0 | ✅ |
 | FR-SOS-5 | Offline queue with an idempotency key and automatic retry. Pending alerts survive an app restart. | P0 | ✅ |
@@ -137,7 +137,7 @@ These two journeys are the release acceptance tests. v1.0 cannot ship unless bot
 
 #### FR-SOS-H: Hardware and alternative activation (native companion app)
 
-Third-party apps **cannot** intercept power or side-button presses on a locked phone, on either Android or iOS (see ARCHITECTURE.md §4). Requirements are scoped to what each OS supports:
+Third-party apps **cannot** intercept power/side or volume-button presses on a locked phone on either Android or iOS without abusing accessibility services (which is prohibited; see ARCHITECTURE.md §4). Requirements are scoped to what each OS supports:
 
 | ID | Requirement | Pri | Status |
 |---|---|---|---|
@@ -153,7 +153,7 @@ Third-party apps **cannot** intercept power or side-button presses on a locked p
 
 | ID | Requirement | Pri | Status |
 |---|---|---|---|
-| FR-MAP-1 | Detect current location with permission. Pick a location by tapping the map or by place search. Text fallback. | P0 | ✅ |
+| FR-MAP-1 | Detect current location with permission. Pick a location by tapping the map or by place/landmark search, with nearby basemap landmarks visible. Text and coordinate-sharing fallback. | P0 | ✅ |
 | FR-MAP-2 | Staff map with colour-coded markers: **red** emergency, **orange** high priority, **blue** general, **green** resolved. Each marker also has a text or shape cue so colour isn't the only signal. | P0 | ✅ |
 | FR-MAP-3 | Filters by category, date and severity. "Assigned to me" view. Directions link. | P0 | ✅ |
 | FR-MAP-4 | Location precision depends on role. The public map shows only coarsened, non-confidential points. Exact locations of vulnerable reporters or confidential cases are never public. | P0 | ✅ |
@@ -164,7 +164,7 @@ Third-party apps **cannot** intercept power or side-button presses on a locked p
 
 | ID | Requirement | Pri | Status |
 |---|---|---|---|
-| FR-EVD-1 | In-app photo, video and audio capture, with preview, retake and discard. Upload from device storage. Per-item description. | P0 | ✅ |
+| FR-EVD-1 | In-app photo, video and audio capture, with preview, retake and discard. Upload media and documents (PDF) from device storage. Per-item description. | P0 | ✅ |
 | FR-EVD-2 | Upload progress and retry. Files are validated by magic bytes, not by extension. | P0 | ✅ |
 | FR-EVD-3 | SHA-256 of the **original** bytes. AES-256-GCM envelope encryption with a per-file key. Only ciphertext is stored. | P0 | ✅ |
 | FR-EVD-4 | Originals are never modified, compressed or overwritten. Derivatives (previews, transcodes) are stored separately and labelled. | P0 | 🟡 no derivatives yet |
@@ -238,7 +238,7 @@ Every AI output is labelled **"AI suggestion"**, requires human confirmation and
 | FR-ADM-2 | Manage departments. | P0 | ✅ |
 | FR-ADM-3 | Overview and security metrics (failed logins, denied access, lockouts). | P0 | ✅ |
 | FR-ADM-4 | Audit-log viewer with evidence-access purposes **redacted** for admins. | P0 | ✅ |
-| FR-ADM-5 | Platform configuration: emergency numbers, SOS settings, integration status (`configured` / `not_configured`). | P0 | 🟡 |
+| FR-ADM-5 | Platform configuration: emergency numbers, SOS settings, integration status (`configured` / `not_configured`). | P0 | ✅ |
 | FR-ADM-6 | System health monitoring (latency, queue depth, ledger lag). | P1 | ⬜ |
 | FR-ADM-7 | Admins have **no** route to case content, evidence or reporter identity. | P0 | ✅ |
 
@@ -246,7 +246,7 @@ Every AI output is labelled **"AI suggestion"**, requires human confirmation and
 
 | ID | Requirement | Pri | Status |
 |---|---|---|---|
-| FR-UX-1 | The home screen has branding, a welcome message, SOS, report, anonymous report, my reports, map, call emergency services, help and language switch. | P0 | ✅ |
+| FR-UX-1 | The home screen has branding, a welcome message, SOS, report, anonymous report, my reports, map, call emergency services, help and language switch; light/dark theme toggle across the app and a role-based sidebar dashboard shell for staff and administrators. | P0 | ✅ |
 | FR-UX-2 | Emergency numbers appear on every page. A disclaimer of the platform's role is always reachable. | P0 | ✅ |
 | FR-UX-3 | **Full** English and Kiswahili coverage of every screen, including errors. | P0 | 🟡 nav and home only |
 | FR-UX-4 | Every action shows a loading, success or failure state. Error messages say how to fix the problem. No dead buttons. | P0 | ✅ |
