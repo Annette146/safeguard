@@ -28,3 +28,6 @@ Thumbs.db
 .vite/
 .eslintcache
 coverage/
+
+# Local notes
+init prompt.md
