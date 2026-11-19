@@ -1,0 +1,11 @@
+{
+  "name": "SAFEGUARD",
+  "short_name": "SAFEGUARD",
+  "description": "Report incidents, request emergency help and track your reports securely.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f2a44",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }],
+  "shortcuts": [{ "name": "SOS – Request emergency help", "short_name": "SOS", "url": "/sos" }]
+}
