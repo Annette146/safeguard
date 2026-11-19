@@ -27,16 +27,20 @@ Once `dist/` is built, the server serves it at http://localhost:4000. The dev se
 
 ## Stack
 
-React 19, react-router v7 (imported from `react-router`, not `react-router-dom`), Tailwind CSS v4 through the `@tailwindcss/vite` plugin (no tailwind config file), Leaflet + OpenStreetMap, TypeScript strict. No state library: state lives in React context and local component state.
+React 19, react-router v7 (imported from `react-router`, not `react-router-dom`), Tailwind CSS v4 through the `@tailwindcss/vite` plugin (no tailwind config file, class-based dark mode via `@custom-variant dark`), Redux Toolkit (`@reduxjs/toolkit` + `react-redux`) for persisted light/dark theme state, `lucide-react` icons, Leaflet + OpenStreetMap, TypeScript strict.
 
 ## Architecture
 
-- **Routing (`src/main.tsx`)**: all routes are declared here inside `<Layout>`. `RequireRole` guards are UX-only. The server enforces every permission again, so never rely on the client for access control. Staff and admin pages (`StaffDashboard`, `CaseDetail`, `Admin`) are lazy-loaded so citizens on slow connections don't download them. Keep any new staff-only page lazy.
-- **API client (`src/lib/api.ts`)**: always call the backend through `api(method, url, opts)`. It attaches the bearer token, retries once after a silent refresh on a 401 and throws `ApiError` (`status`, `code`, `fields` for form validation errors, `code: 'offline'` on network failure).
+- **Root providers (`src/Provider.tsx`)**: wraps the app in Redux `<Provider store={store}>`, `<I18nProvider>`, and `<AuthProvider>`.
+- **Routing (`src/main.tsx`)**: all routes are declared here inside `<Layout>`, including citizen routes and role-gated dashboard routes (`/staff`, `/staff/incidents`, `/staff/sos`, `/staff/map`, `/staff/ledger`, `/staff/cases/:id` and `/admin`, `/admin/users`, `/admin/suspended`, `/admin/departments`, `/admin/audit-logs`, `/admin/settings`). `RequireRole` (`src/auth/RequireRole.tsx`) guards are UX-only. The server enforces every permission again, so never rely on the client for access control. Staff and admin pages (`StaffDashboard`, `StaffIncidents`, `StaffSos`, `StaffMap`, `StaffLedger`, `CaseDetail`, `AdminOverview`, `AdminUsers`, `AdminSuspended`, `AdminDepartments`, `AdminAuditLogs`, `AdminSettings`) are lazy-loaded so citizens on slow connections don't download them. Keep any new staff-only page lazy.
+- **Dashboard shell (`src/components/Header.tsx`, `src/components/Sidebar.tsx`, `src/components/Layout.tsx`, `src/Data/Navitems.ts`)**: `Header` renders the fixed top navigation bar, language switch, notification bell, profile dropdown, and Redux-backed theme toggle. For `/staff*` and `/admin*` routes, `Layout` renders the fixed left `Sidebar` driven by `src/Data/Navitems.ts` alongside `PageHeader` and `AdminActionDialog`.
+- **API client (`src/lib/api.ts`) & Hooks (`src/hooks/`)**: always call the backend through `api(method, url, opts)`. It attaches the bearer token, retries once after a silent refresh on a 401 and throws `ApiError` (`status`, `code`, `fields` for form validation errors, `code: 'offline'` on network failure). `toApiFailure()` maps errors to structured `ApiFailure` objects consumed by `useApiQuery` and domain hooks (`useAdminOverview`, `useAdminUsers`, `useAdminDepartments`, `useAdminAuditLogs`, `useStaffIncidents`, `useActiveSos`).
   - The access token is kept **in memory only**, never in localStorage. The refresh token is an httpOnly cookie, and `refreshSession()` deduplicates concurrent refreshes.
   - Uploads use `uploadWithProgress` (XHR) because fetch has no upload progress.
   - Real-time updates use `subscribe()`, which reads SSE from `/api/events` over fetch because EventSource can't send an Authorization header. It reconnects in a loop.
-- **Auth (`src/lib/auth.tsx`)**: `useAuth()` gives `user`, `ready`, `login` (optional TOTP), `register` and `logout`. Roles: `citizen | officer | commander | investigator | admin`. On boot the app restores the session through the refresh cookie and renders nothing until `ready`.
+- **Auth (`src/auth/AuthProvider.tsx`, re-exported at `src/lib/auth.tsx`)**: `useAuth()` gives `user`, `ready`, `login` (optional TOTP), `register` and `logout`. Roles: `citizen | officer | commander | investigator | admin`. On boot the app restores the session through the refresh cookie and renders nothing until `ready`.
+- **Theme (`src/slices/theme/ThemeSlice.ts`, `src/slices/stores/ThemeStore.ts`)**: Redux slice managing `'light' | 'dark'` theme persisted in `localStorage`.
+- **Types (`src/types/safeguardTypes.ts`)**: shared TypeScript contracts for admin, incident, SOS, ledger, and API failure types.
 - **i18n (`src/lib/i18n.tsx`)**: English and Kiswahili dictionaries live inline. `sw` is typed as `typeof en`, so every key you add must exist in both. Use `useI18n().t(key)`. Only part of the UI is translated so far, and some strings are hard-coded English.
 - **Display labels (`src/lib/labels.ts`)**: mappings for categories, statuses and similar values.
 - **SOS (`src/pages/Sos.tsx`)**: offline-first. Pending SOS requests are queued in localStorage with an idempotency key and retried. States must stay honest (`queued → sent → delivered → acknowledged → dispatched`): never show a state the server hasn't confirmed.
@@ -49,3 +53,8 @@ React 19, react-router v7 (imported from `react-router`, not `react-router-dom`)
 - Anonymous reports return a reference and a one-time tracking code that `/track` uses. No identity is attached.
 - External integrations (SMS, emergency-service API, malware scan, KMS) return `not_configured`. The UI must say so instead of implying success.
 - Emergency numbers come from `GET /api/config` and appear on every page via `Layout`.
+
+## Coding & UI conventions
+
+- Do not use emojis anywhere in the UI or code; use icons (from `lucide-react`) instead.
+- Avoid long comments; keep code comments brief and only where necessary.

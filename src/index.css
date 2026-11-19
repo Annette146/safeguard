@@ -1,6 +1,8 @@
 @import 'tailwindcss';
 @import 'leaflet/dist/leaflet.css';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-brand-50: #eef4fa;
   --color-brand-100: #d5e3f1;
@@ -14,7 +16,7 @@
 }
 
 html { -webkit-text-size-adjust: 100%; }
-body { @apply bg-slate-50 text-slate-900 antialiased; }
+body { @apply bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 antialiased; }
 
 /* Visible keyboard focus everywhere (WCAG 2.4.7 / 2.4.11) */
 :focus-visible { outline: 3px solid #f59e0b; outline-offset: 2px; border-radius: 4px; }
